@@ -59,6 +59,8 @@ src/
 - ✅ Logging detallado de operaciones
 - ✅ Métricas calculadas de usuarios (estrellas, ratios, actividad)
 - ✅ Configuración mediante variables de entorno
+- ✅ Dockerfile optimizado con multi-stage build
+- ✅ Contenedor seguro con usuario no-root
 
 ## 📋 Endpoints Disponibles
 
@@ -170,6 +172,68 @@ npm run start:prod
 
 La aplicación estará disponible en `http://localhost:3000`
 
+## 🐳 Docker
+
+El proyecto incluye un Dockerfile optimizado con multi-stage build para producción.
+
+### Construir la imagen
+
+```bash
+# Construir la imagen
+docker build -t github-api .
+
+# Construir con tag específico
+docker build -t github-api:latest .
+```
+
+### Ejecutar el contenedor
+
+```bash
+# Ejecutar en modo desarrollo (con volumen para hot reload)
+docker run -p 3000:3000 --env-file config.env github-api
+
+# Ejecutar en modo producción
+docker run -d -p 3000:3000 --env-file config.env --name github-api github-api
+
+# Ejecutar con variables de entorno específicas
+docker run -p 3000:3000 \
+  -e GITHUB_API_URL=https://api.github.com \
+  -e GITHUB_TOKEN=your_token_here \
+  -e CACHE_TTL=300000 \
+  -e PORT=3000 \
+  github-api
+```
+
+### Características del Dockerfile
+
+- **Multi-stage build**: Optimiza el tamaño de la imagen final
+- **Node.js 18 Alpine**: Imagen base ligera y segura
+- **Usuario no-root**: Ejecuta la aplicación con usuario `nestjs` para seguridad
+- **Solo dependencias de producción**: Reduce el tamaño de la imagen
+- **Puerto 3000**: Expuesto por defecto
+- **Configuración de entorno**: Soporte para archivo `config.env`
+
+### Docker Compose (Opcional)
+
+Puedes crear un archivo `docker-compose.yml` para facilitar el despliegue:
+
+```yaml
+version: '3.8'
+services:
+  github-api:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - config.env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+```
+
 ## 🧪 Testing
 
 ```bash
@@ -209,27 +273,6 @@ El sistema de cache está configurado con:
 3. **Load Balancing**: Usar múltiples instancias
 4. **Monitoring**: Agregar métricas y logging
 5. **Database**: Persistir datos frecuentemente consultados
-
-### Ejemplo de Cache con Redis
-
-```typescript
-// En cache.adapter.ts
-import { Redis } from 'ioredis';
-
-@Injectable()
-export class RedisCacheAdapter implements CachePort {
-  constructor(private redis: Redis) {}
-  
-  async get<T>(key: string): Promise<T | null> {
-    const value = await this.redis.get(key);
-    return value ? JSON.parse(value) : null;
-  }
-  
-  async set<T>(key: string, value: T, ttl?: number): Promise<void> {
-    await this.redis.setex(key, ttl || 300, JSON.stringify(value));
-  }
-}
-```
 
 ## 📝 Logs
 
