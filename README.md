@@ -55,58 +55,60 @@ src/
 - ✅ Consumo de la API de GitHub
 - ✅ Manejo de errores robusto
 - ✅ Validación de parámetros
-- ✅ Paginación en endpoints
+- ✅ Documentación automática con Swagger
+- ✅ Logging detallado de operaciones
+- ✅ Métricas calculadas de usuarios (estrellas, ratios, actividad)
 - ✅ Configuración mediante variables de entorno
 
 ## 📋 Endpoints Disponibles
 
-### 1. Obtener Usuario
+### 1. Obtener Perfil de Usuario
 ```http
-GET /github/users/{username}
+GET /github/profiles/{username}
+```
+
+**Descripción:** Obtiene la información del perfil de un usuario de GitHub.
+
+**Respuesta:**
+```json
+{
+  "username": "octocat",
+  "fullName": "The Octocat",
+  "avatar": "https://github.com/images/error/octocat_happy.gif",
+  "bio": "A mysterious octocat that lives in San Francisco",
+  "publicRepos": 8,
+  "followers": 20,
+  "profileUrl": "https://github.com/octocat"
+}
 ```
 
 **Ejemplo:**
 ```bash
-curl http://localhost:3000/github/users/octocat
+curl http://localhost:3000/github/profiles/octocat
 ```
 
-### 2. Obtener Repositorios de Usuario
+### 2. Obtener Métricas de Usuario
 ```http
-GET /github/users/{username}/repositories?page=1&per_page=10
+GET /github/metrics/{username}
 ```
 
-**Parámetros de consulta:**
-- `page` (opcional): Número de página (default: 1)
-- `per_page` (opcional): Elementos por página (default: 10, max: 100)
+**Descripción:** Obtiene métricas calculadas de un usuario de GitHub, incluyendo total de estrellas, ratio de seguidores/repositorios y días desde el último push.
+
+**Respuesta:**
+```json
+{
+  "username": "octocat",
+  "metrics": {
+    "totalStars": 150,
+    "followersToReposRatio": 2.5,
+    "lastPushDaysAgo": 5
+  }
+}
+```
 
 **Ejemplo:**
 ```bash
-curl "http://localhost:3000/github/users/octocat/repositories?page=1&per_page=5"
-```
-
-### 3. Obtener Repositorio Específico
-```http
-GET /github/repositories/{owner}/{repo}
-```
-
-**Ejemplo:**
-```bash
-curl http://localhost:3000/github/repositories/octocat/Hello-World
-```
-
-### 4. Buscar Repositorios
-```http
-GET /github/search/repositories?q={query}&page=1&per_page=10
-```
-
-**Parámetros de consulta:**
-- `q` (requerido): Término de búsqueda
-- `page` (opcional): Número de página (default: 1)
-- `per_page` (opcional): Elementos por página (default: 10, max: 100)
-
-**Ejemplo:**
-```bash
-curl "http://localhost:3000/github/search/repositories?q=nestjs&page=1&per_page=5"
+curl http://localhost:3000/github/metrics/octocat
 ```
 
 ## ⚙️ Configuración
@@ -191,9 +193,12 @@ El sistema de cache está configurado con:
 ### Comportamiento del Cache
 
 - Las respuestas se cachean automáticamente por 5 minutos
-- Las claves de cache incluyen parámetros de paginación
-- Los logs muestran hits/misses del cache
+- **Claves de cache utilizadas:**
+  - `user:{username}` - Para perfiles de usuario
+  - `metrics:{username}` - Para métricas calculadas
+- Los logs muestran hits/misses del cache con duración de operaciones
 - El cache se puede limpiar reiniciando la aplicación
+- Las métricas se calculan una vez y se cachean para evitar múltiples llamadas a la API
 
 ## 🔧 Escalabilidad
 
@@ -228,10 +233,13 @@ export class RedisCacheAdapter implements CachePort {
 
 ## 📝 Logs
 
-El sistema incluye logging para:
-- Cache hits/misses
-- Errores de API
-- Operaciones de cache
+El sistema incluye logging detallado para:
+- **Cache hits/misses** con duración de operaciones
+- **Errores de API** con stack traces
+- **Operaciones de dominio** (getUser, getUserMetrics)
+- **Paginación de repositorios** con conteo de elementos por página
+- **Cálculo de métricas** con estadísticas detalladas
+- **Decorador @LogExecution** para tracking de métodos
 
 ## 🤝 Contribución
 
