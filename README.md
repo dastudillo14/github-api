@@ -240,12 +240,6 @@ services:
 # Tests unitarios
 npm run test
 
-# Tests con coverage
-npm run test:cov
-
-# Tests e2e
-npm run test:e2e
-```
 
 ## 📊 Cache
 
